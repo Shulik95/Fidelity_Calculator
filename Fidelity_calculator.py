@@ -75,7 +75,7 @@ def find_contours(thresh):
     return filtered_cont
 
 
-def mark_contours(contour_arr, img):
+def mark_contours(contour_arr, img, plot=False):
     """
     marks the contours on the image and crops them.
     :return: python list containing cropped images.
@@ -83,6 +83,7 @@ def mark_contours(contour_arr, img):
     marg = 10
     fig, ax = plt.subplots()
     ax.imshow(img, cmap="gray")
+    sub_images = []  # init array for pictures
     for contour in contour_arr:
         lower_dim = contour[:, 0]
         x, y = lower_dim[:, 0], lower_dim[:, 1]
@@ -94,13 +95,20 @@ def mark_contours(contour_arr, img):
         # avoid index error
         if min_x - marg < 0 or min_y - marg < 0 or max_y + marg > img.shape[1] or max_x + marg > img.shape[0]:
             marg = 0
-        ax.plot([min_x - marg, max_x + marg, max_x + marg, min_x - marg, min_x - marg],
-                [min_y - marg, min_y - marg, max_y + marg, max_y + marg, min_y - marg], c='r', linewidth=0.5)
-    plt.show()
+        sub_images.append(img[min_y - marg:max_y + marg, min_x - marg:max_x + marg])
+        if plot:
+            ax.plot([min_x - marg, max_x + marg, max_x + marg, min_x - marg, min_x - marg],
+                    [min_y - marg, min_y - marg, max_y + marg, max_y + marg, min_y - marg], c='r', linewidth=0.5)
+    if plot:
+        plt.show()
+    return sub_images
 
 
 if __name__ == '__main__':
     img = read_image("Cat_after.png")
     ret, thresh = threshold_image(filter_image(img))
     contours = find_contours(thresh)
-    mark_contours(contours, np.copy(img))
+    img_arr = mark_contours(contours, np.copy(img))
+    for item in img_arr:
+        plt.imshow(item, cmap="gray")
+        plt.show()
