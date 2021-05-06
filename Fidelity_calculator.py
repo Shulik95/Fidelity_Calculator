@@ -13,6 +13,7 @@ MAX_GRAY_SCALE = 255
 GRAY_SCALE = 1
 THRESHOLD = 210
 NO_PARENT = -1
+MIN_IMG_SIZE = 30 * 30
 
 
 # ---------- code ---------- #
@@ -56,12 +57,11 @@ def threshold_image(img, threshold=THRESHOLD):
     return cv2.threshold(img, threshold, MAX_GRAY_SCALE, cv2.THRESH_BINARY)
 
 
-def find_contours(thresh, orig_img):
+def find_contours(thresh):
     """
-
-    :param thresh:
-    :param orig_img:
-    :return:
+    find contours in image, filters external (not 100%!!)
+    :param thresh: binary image as np.array of type np.float32
+    :return: returns a list of contours, each
     """
     thresh = thresh.astype(np.uint8)
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
@@ -72,14 +72,35 @@ def find_contours(thresh, orig_img):
         if hierarchy[0, i, 3] == NO_PARENT:
             filtered_cont.append(contours[i])
 
+    return filtered_cont
 
+
+def mark_contours(contour_arr, img):
+    """
+    marks the contours on the image and crops them.
+    :return: python list containing cropped images.
+    """
+    marg = 10
+    fig, ax = plt.subplots()
+    ax.imshow(img, cmap="gray")
+    for contour in contour_arr:
+        lower_dim = contour[:, 0]
+        x, y = lower_dim[:, 0], lower_dim[:, 1]
+        min_x, min_y, max_x, max_y = min(x), min(y), max(x), max(y)
+
+        # remove small noise
+        if (max_x - min_x) * (max_y - min_y) < MIN_IMG_SIZE:
+            continue
+        # avoid index error
+        if min_x - marg < 0 or min_y - marg < 0 or max_y + marg > img.shape[1] or max_x + marg > img.shape[0]:
+            marg = 0
+        ax.plot([min_x - marg, max_x + marg, max_x + marg, min_x - marg, min_x - marg],
+                [min_y - marg, min_y - marg, max_y + marg, max_y + marg, min_y - marg], c='r', linewidth=0.5)
+    plt.show()
 
 
 if __name__ == '__main__':
     img = read_image("Cat_after.png")
-    blurr = filter_image(img)
-    ret, thresh = threshold_image(blurr)
-    find_contours(thresh, img)
-    # plt.subplot(121), plt.imshow(blurr, cmap="gray"), plt.title("Blurred")
-    # plt.subplot(122), plt.imshow(thresh, cmap="gray"), plt.title("Binary")
-    # plt.show()
+    ret, thresh = threshold_image(filter_image(img))
+    contours = find_contours(thresh)
+    mark_contours(contours, np.copy(img))
