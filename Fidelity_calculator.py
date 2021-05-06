@@ -12,6 +12,7 @@ THREE_DIM = 3
 MAX_GRAY_SCALE = 255
 GRAY_SCALE = 1
 THRESHOLD = 210
+NO_PARENT = -1
 
 
 # ---------- code ---------- #
@@ -25,7 +26,7 @@ def read_image(file_name, representation=GRAY_SCALE):
     :return: an image with intensities normalized to the range [0,1]
     """
     im = np.array(imread(file_name))
-    img_float = im.astype(np.float32) / MAX_GRAY_SCALE
+    img_float = im.astype(np.float32)
     if representation == 1:  # return grayscale image
         if len(im.shape) == TWO_DIM:  # image was given in grayscale
             return img_float
@@ -52,10 +53,25 @@ def threshold_image(img, threshold=THRESHOLD):
     :param img: 2D numpy array of type np.float32
     :return: a tuple (threshold, binary image)
     """
-    return cv2.threshold(img*MAX_GRAY_SCALE, threshold, MAX_GRAY_SCALE, cv2.THRESH_BINARY)
+    return cv2.threshold(img, threshold, MAX_GRAY_SCALE, cv2.THRESH_BINARY)
 
-def find_contours(img):
-    pass
+
+def find_contours(thresh, orig_img):
+    """
+
+    :param thresh:
+    :param orig_img:
+    :return:
+    """
+    thresh = thresh.astype(np.uint8)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+
+    # filter outer contours
+    filtered_cont = []
+    for i in range(len(contours)):
+        if hierarchy[0, i, 3] == NO_PARENT:
+            filtered_cont.append(contours[i])
+
 
 
 
@@ -63,6 +79,7 @@ if __name__ == '__main__':
     img = read_image("Cat_after.png")
     blurr = filter_image(img)
     ret, thresh = threshold_image(blurr)
-    plt.subplot(121), plt.imshow(blurr, cmap="gray"), plt.title("Blurred")
-    plt.subplot(122), plt.imshow(thresh, cmap="gray"), plt.title("Binary")
-    plt.show()
+    find_contours(thresh, img)
+    # plt.subplot(121), plt.imshow(blurr, cmap="gray"), plt.title("Blurred")
+    # plt.subplot(122), plt.imshow(thresh, cmap="gray"), plt.title("Binary")
+    # plt.show()
