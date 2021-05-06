@@ -11,6 +11,7 @@ TWO_DIM = 2
 THREE_DIM = 3
 MAX_GRAY_SCALE = 255
 GRAY_SCALE = 1
+THRESHOLD = 210
 
 
 # ---------- code ---------- #
@@ -43,7 +44,25 @@ def filter_image(img):
     return cv2.bilateralFilter(img, 9, 50, 50)
 
 
+def threshold_image(img, threshold=THRESHOLD):
+    """
+    thresholds a grayscale image to a binary image.
+    :param threshold: default is 210 by trial and error.
+     assumes image is not compatible with otsu's binarization.
+    :param img: 2D numpy array of type np.float32
+    :return: a tuple (threshold, binary image)
+    """
+    return cv2.threshold(img*MAX_GRAY_SCALE, threshold, MAX_GRAY_SCALE, cv2.THRESH_BINARY)
+
+def find_contours(img):
+    pass
+
+
+
 if __name__ == '__main__':
-    
-
-
+    img = read_image("Cat_after.png")
+    blurr = filter_image(img)
+    ret, thresh = threshold_image(blurr)
+    plt.subplot(121), plt.imshow(blurr, cmap="gray"), plt.title("Blurred")
+    plt.subplot(122), plt.imshow(thresh, cmap="gray"), plt.title("Binary")
+    plt.show()
