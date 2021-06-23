@@ -1,7 +1,9 @@
+
 # ---------- imports ---------- #
 import numpy as np
 from matplotlib import pyplot as plt
 from imageio import imread, imwrite
+from skimage.metrics import structural_similarity as ssim
 from skimage.color import rgb2gray
 import cv2
 import imutils
@@ -75,16 +77,17 @@ def find_contours(thresh):
     return filtered_cont
 
 
-def mark_contours(contour_arr, img, plot=False):
+def mark_contours(contour_arr, img, _plot=False):
     """
     marks the contours on the image and crops them.
-    :return: python list containing cropped images.
+    :return: python list containing tuples of cropped image and its contour.
     """
-    marg = 10
+    marg = 20
     fig, ax = plt.subplots()
     ax.imshow(img, cmap="gray")
     sub_images = []  # init array for pictures
     for contour in contour_arr:
+
         lower_dim = contour[:, 0]
         x, y = lower_dim[:, 0], lower_dim[:, 1]
         min_x, min_y, max_x, max_y = min(x), min(y), max(x), max(y)
@@ -95,20 +98,88 @@ def mark_contours(contour_arr, img, plot=False):
         # avoid index error
         if min_x - marg < 0 or min_y - marg < 0 or max_y + marg > img.shape[1] or max_x + marg > img.shape[0]:
             marg = 0
-        sub_images.append(img[min_y - marg:max_y + marg, min_x - marg:max_x + marg])
-        if plot:
+        # crop only half cause image is symmetric:
+        if max_x <= img.shape[0] // 2:
+            sub_images.append(img[min_y:max_y, min_x:max_x])
+        if _plot:
             ax.plot([min_x - marg, max_x + marg, max_x + marg, min_x - marg, min_x - marg],
                     [min_y - marg, min_y - marg, max_y + marg, max_y + marg, min_y - marg], c='r', linewidth=0.5)
-    if plot:
+    if _plot:
+        plt.savefig("found_subshapes")
         plt.show()
     return sub_images
 
 
+def rotate_images():
+    pass
+
+
+def resize_image(img, width, height):
+    """
+    resizes the given image to size width X height, doesnt edit the original
+    image.
+    :param width: integer representing new width
+    :param height: integer representing new height
+    :param img: np.array represnting the image to resize
+    :return: a resized copy of img.
+    """
+
+    return cv2.resize(img, (width, height))
+
+
+def compare_img(img1, img2, err_function="ALL"):
+    """
+    Receives two images to compare, img1 being the original. and a string indictating
+    which error function to use. doesnt assume images are the same size.
+    :param err_function: string indicating which comparison func to use, supports:
+    (1) "ALL" - apply all functions. (2) "MSE" - apply MSE err function. (3) "SSIM" - apply structural similarity comparison
+    :param img1: np.array of type float32.
+    :param img2: np.array of type float32.
+    :return: array containing the errors, if "ALL" is used then array[0]=MSE and array[1] is SSIM
+    else its a singleton of chosen function.
+    """
+    # make sure images are the same shape #
+    height1, width1, height2, width2 = img1.shape[0], img1.shape[1], img2.shape[0], img2.shape[1]
+    if img1.shape != img2.shape:
+        if width1 * height1 > width2 * height2:
+            img1 = resize_image(img1, width2, height2)
+        else:
+            img2 = resize_image(img2, width1, height1)
+
+    # compare images #
+    func_arr = [mse, ssim]
+    err_arr = []
+    for func in func_arr:
+        if err_function == "ALL" or func.__name__.upper() == err_function:
+            err_arr.append(func(img1, img2))
+    return err_arr
+
+
+def mse(img1, img2):
+    """
+    calculates the mean squared diffrence between two given images. assumes
+    the images have the same size image
+    :param img1:
+    :param img2:
+    :return:
+    """
+    err = np.sum((img1.astype("float") - img2.astype("float")) ** 2)
+    err /= float(img1.shape[0] * img2.shape[1])
+
+    # return the MSE, the lower the error, the more "similar"
+    # the two images are
+    return err
+
+
 if __name__ == '__main__':
+
     img = read_image("Cat_after.png")
     ret, thresh = threshold_image(filter_image(img))
     contours = find_contours(thresh)
-    img_arr = mark_contours(contours, np.copy(img))
+    img_arr = mark_contours(contours, np.copy(img), True)
+    counter = 0
     for item in img_arr:
-        plt.imshow(item, cmap="gray")
-        plt.show()
+        print(item.dtype)
+        plt.imshow((filter_image(item[0])), cmap="gray")
+        #plt.savefig("sub_image" + str(counter))
+        counter += 1
