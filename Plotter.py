@@ -12,7 +12,7 @@ TRANS = 2
 
 # ------------ code ------------ #
 
-def img_from_csv(path, parameter):
+def __img_from_csv(path, parameter):
     """
     reads image if a file path is given, or reads multiple csv files if a directory is given.
     :param parameter: int representing what is the changing parameter - 1 for ancillas, 2 for transparencies.
@@ -27,7 +27,7 @@ def img_from_csv(path, parameter):
         only_files = [os.path.abspath(os.path.dirname(f)) + "\\" + parent_dir + "\\" + f
                       for f in os.listdir(path) if
                       os.path.splitext(os.path.abspath(f))[1] == ".csv"]  # filter .csv files
-        ret = [(np.abs(np.genfromtxt(file, delimiter=',', dtype=None, encoding=None)), get_name(file, parameter)) for
+        ret = [(np.abs(np.genfromtxt(file, delimiter=',', dtype=None, encoding=None)), __get_name(file, parameter)) for
                file in
                only_files]  # converts csv to np array
 
@@ -36,7 +36,7 @@ def img_from_csv(path, parameter):
         if extension != ".csv":
             print("Given path doesn't contain a .csv file")
             return
-        ret.append((np.abs(np.genfromtxt(path, delimiter=",", dtype=None, encoding=None)), get_name(path, parameter)))
+        ret.append((np.abs(np.genfromtxt(path, delimiter=",", dtype=None, encoding=None)), __get_name(path, parameter)))
     else:
         print("Given path is not a Directory or a file")
     return sorted(ret, key=lambda x: int(x[1]))
@@ -53,7 +53,7 @@ def plot_err(orig_img_path, path, param, err_func="ALL"):
     """
     err_mat = None
     orig_img = fc.read_image(orig_img_path)
-    to_compare_lst = img_from_csv(path, param)
+    to_compare_lst = __img_from_csv(path, param)
     # creates matrix where each column is a the error according to diff func
     for tup in to_compare_lst:
         curr_img = rgb2gray(tup[0].astype(np.float32))
@@ -83,22 +83,17 @@ def plot_err(orig_img_path, path, param, err_func="ALL"):
         plt.show()
 
 
-def get_name(file_path, changing):
+def __get_name(file_path, changing):
     """
     returns the name of the file with number of ancillas/ transparencies used.
     :param changing:
     :param file_path: string - absolute path to given file
     :return: string of the format - "# ancillas/transparencies"
     """
-    name = file_path.split("\\")[-1].split(",")[1]
+    name = file_path.split("\\")[-1]
     if changing == ANCILLAS:
-        return name.split()[0]
+        return name.split(",")[1].split()[0]
     elif changing == TRANS:
-        return name.split('.')[0].split()[0]  # removes .csv
-
-
-if __name__ == '__main__':
-    plot_err("GBphsmskImg.bmp", "change_transparencies_1", TRANS)
-    # plot_err("GBphsmskImg.bmp", "change_transparencies_2", TRANS)
+        return name.split(',')[2].split()[0]  # removes .csv
 
 
