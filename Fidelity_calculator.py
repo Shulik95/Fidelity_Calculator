@@ -164,9 +164,7 @@ def mse(img1, img2):
     :param img2:
     :return:
     """
-    err = np.sum((img1.astype("float") - img2.astype("float")) ** 2)
-    err /= float(img1.shape[0] * img2.shape[1])
-
+    err = (np.square(img1 - img2)).mean(axis=None)
     # return the MSE, the lower the error, the more "similar"
     # the two images are
     return err

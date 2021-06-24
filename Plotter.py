@@ -57,6 +57,7 @@ def plot_err(orig_img_path, path, param, err_func="ALL"):
     # creates matrix where each column is a the error according to diff func
     for tup in to_compare_lst:
         curr_img = rgb2gray(tup[0].astype(np.float32))
+        curr_img = (curr_img / np.max(curr_img)) * 255  # normalize image
         curr_err = fc.compare_img(orig_img, curr_img, err_func)  # get errors according to diff error functions
         if err_mat is not None:
             err_mat = np.vstack((err_mat, curr_err))
@@ -65,11 +66,20 @@ def plot_err(orig_img_path, path, param, err_func="ALL"):
 
     # plot the error according to the changing parameter
     x_arr = np.array([int(tup[1]) for tup in to_compare_lst])
-    for err_vec in err_mat.T:
-        plt.plot(x_arr, err_vec)
-        plt.grid(True)
-        plt.xlabel("# of ancillas")
-        plt.ylabel("err")
+    titles = ["MSE", "SSIM", "L1 Norm"]
+    for i in range(err_mat.shape[1]):
+        plt.scatter(x_arr, err_mat.T[i])
+        plt.plot(x_arr, err_mat.T[i], c="navy")
+        plt.xticks(x_arr)
+        if param == ANCILLAS:
+            plt.xlabel("# of ancillas")
+            temp = "Ancillas"
+        else:
+            plt.xlabel("# of transparencies")
+            temp = "Transparencies"
+        plt.ylabel("error")
+        plt.title(titles[i] + " vs. # of " + temp)
+        plt.savefig(titles[i])
         plt.show()
 
 
@@ -88,5 +98,7 @@ def get_name(file_path, changing):
 
 
 if __name__ == '__main__':
-    plt.show()
-    plot_err("GBphsmskImg.bmp", "change_ancillas_2", ANCILLAS)
+    plot_err("GBphsmskImg.bmp", "change_transparencies_1", TRANS)
+    # plot_err("GBphsmskImg.bmp", "change_transparencies_2", TRANS)
+
+
