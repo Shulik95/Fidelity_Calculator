@@ -138,6 +138,7 @@ def compare_img(img1, img2, err_function="ALL"):
     :return: np array containing the errors, if "ALL" is used then array[0]=MSE and array[1] is SSIM and array[2] is L1
     else its a singleton of chosen function.
     """
+
     # make sure images are the same shape #
     height1, width1, height2, width2 = img1.shape[0], img1.shape[1], img2.shape[0], img2.shape[1]
     if img1.shape != img2.shape:
@@ -145,8 +146,8 @@ def compare_img(img1, img2, err_function="ALL"):
             img1 = resize_image(img1, width2, height2)
         else:
             img2 = resize_image(img2, width1, height1)
-
-    # compare images #
+    # TODO: create better resize to avoid interpolation when possible
+    # compare images#
     func_arr = [mse, ssim, L1_norm]
     err_arr = []
     for func in func_arr:
@@ -183,15 +184,3 @@ def L1_norm(img1, img2):
     return LA.norm((flattened1 - flattened2), ord=1)
 
 
-if __name__ == '__main__':
-
-    img = read_image("Cat_after.png")
-    ret, thresh = threshold_image(filter_image(img))
-    contours = find_contours(thresh)
-    img_arr = mark_contours(contours, np.copy(img), True)
-    counter = 0
-    for item in img_arr:
-        print(item.dtype)
-        plt.imshow((filter_image(item[0])), cmap="gray")
-        # plt.savefig("sub_image" + str(counter))
-        counter += 1
