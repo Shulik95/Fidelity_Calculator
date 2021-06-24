@@ -182,5 +182,3 @@ def L1_norm(img1, img2):
     flattened1 = np.ravel(img1)
     flattened2 = np.ravel(img2)
     return LA.norm((flattened1 - flattened2), ord=1)
-
-
