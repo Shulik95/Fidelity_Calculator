@@ -1,6 +1,6 @@
-
 # ---------- imports ---------- #
 import numpy as np
+from numpy import linalg as LA
 from matplotlib import pyplot as plt
 from imageio import imread, imwrite
 from skimage.metrics import structural_similarity as ssim
@@ -135,7 +135,7 @@ def compare_img(img1, img2, err_function="ALL"):
     (1) "ALL" - apply all functions. (2) "MSE" - apply MSE err function. (3) "SSIM" - apply structural similarity comparison
     :param img1: np.array of type float32.
     :param img2: np.array of type float32.
-    :return: array containing the errors, if "ALL" is used then array[0]=MSE and array[1] is SSIM
+    :return: np array containing the errors, if "ALL" is used then array[0]=MSE and array[1] is SSIM and array[2] is L1
     else its a singleton of chosen function.
     """
     # make sure images are the same shape #
@@ -147,12 +147,12 @@ def compare_img(img1, img2, err_function="ALL"):
             img2 = resize_image(img2, width1, height1)
 
     # compare images #
-    func_arr = [mse, ssim]
+    func_arr = [mse, ssim, L1_norm]
     err_arr = []
     for func in func_arr:
         if err_function == "ALL" or func.__name__.upper() == err_function:
             err_arr.append(func(img1, img2))
-    return err_arr
+    return np.array(err_arr)
 
 
 def mse(img1, img2):
@@ -171,6 +171,18 @@ def mse(img1, img2):
     return err
 
 
+def L1_norm(img1, img2):
+    """
+
+    :param img1:
+    :param img2:
+    :return:
+    """
+    flattened1 = np.ravel(img1)
+    flattened2 = np.ravel(img2)
+    return LA.norm((flattened1 - flattened2), ord=1)
+
+
 if __name__ == '__main__':
 
     img = read_image("Cat_after.png")
@@ -181,5 +193,5 @@ if __name__ == '__main__':
     for item in img_arr:
         print(item.dtype)
         plt.imshow((filter_image(item[0])), cmap="gray")
-        #plt.savefig("sub_image" + str(counter))
+        # plt.savefig("sub_image" + str(counter))
         counter += 1
