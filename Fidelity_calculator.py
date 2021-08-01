@@ -6,7 +6,6 @@ from imageio import imread, imwrite
 from skimage.metrics import structural_similarity as ssim
 from skimage.color import rgb2gray
 import cv2
-import imutils
 
 # ---------- macros ---------- #
 TWO_DIM = 2
@@ -15,7 +14,9 @@ MAX_GRAY_SCALE = 255
 GRAY_SCALE = 1
 THRESHOLD = 210
 NO_PARENT = -1
-MIN_IMG_SIZE = 30 * 30
+MIN_IMG_SIZE = 10 * 10
+HORIZONTAL = 1
+VERTICAL = 2
 
 
 # ---------- code ---------- #
@@ -77,12 +78,12 @@ def find_contours(thresh):
     return filtered_cont
 
 
-def mark_contours(contour_arr, img, _plot=False):
+def mark_contours(contour_arr, img, symmetry, _plot=False):
     """
     marks the contours on the image and crops them.
     :return: python list containing tuples of cropped image and its contour.
     """
-    marg = 20
+    marg, flag = 7, 0
     fig, ax = plt.subplots()
     ax.imshow(img, cmap="gray")
     sub_images = []  # init array for pictures
@@ -96,17 +97,25 @@ def mark_contours(contour_arr, img, _plot=False):
         if (max_x - min_x) * (max_y - min_y) < MIN_IMG_SIZE:
             continue
         # avoid index error
-        if min_x - marg < 0 or min_y - marg < 0 or max_y + marg > img.shape[1] or max_x + marg > img.shape[0]:
+        if min_x - marg < 0 or min_y - marg < 0 or max_y + marg > img.shape[0] or max_x + marg > img.shape[1]:
             marg = 0
         # crop only half cause image is symmetric:
-        if max_x <= img.shape[0] // 2:
-            sub_images.append(img[min_y:max_y, min_x:max_x])
-        if _plot:
+        # TODO: address different types of symmetry as input from user
+        if symmetry == HORIZONTAL:
+            if max_x <= img.shape[1] // 2:
+                sub_images.append(img[min_y:max_y, min_x:max_x])
+                flag = 1
+        else:  # symmetry is around the X-axis
+            if max_y <= img.shape[0] // 2:
+                sub_images.append(img[min_y:max_y, min_x:max_x])
+                flag = 1
+        if _plot and flag:
             ax.plot([min_x - marg, max_x + marg, max_x + marg, min_x - marg, min_x - marg],
                     [min_y - marg, min_y - marg, max_y + marg, max_y + marg, min_y - marg], c='r', linewidth=0.5)
+            flag = 0
     if _plot:
-        plt.savefig("found_subshapes")
-        plt.show()
+        plt.savefig("found_subshapes2")
+        # plt.show()
     return sub_images
 
 
@@ -180,3 +189,16 @@ def L1_norm(img1, img2):
     flattened1 = np.ravel(img1)
     flattened2 = np.ravel(img2)
     return LA.norm((flattened1 - flattened2), ord=1)
+
+
+if __name__ == '__main__':
+    img = read_image("32X32 cells, 17 ancillas, 9 transparencies, 3 R.png")
+    filt = filter_image(img)
+    threshed = threshold_image(filt, 185)[1]
+    plt.imshow(threshed, cmap='gray')
+    plt.show()
+    cont_lst = find_contours(threshed)
+    marked = mark_contours(cont_lst, img, 2, True)
+    for im in marked:
+        plt.imshow(im, cmap='gray')
+        plt.show()

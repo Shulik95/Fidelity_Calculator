@@ -67,9 +67,11 @@ def plot_err(orig_img_path, path, param, err_func="ALL"):
     # plot the error according to the changing parameter
     x_arr = np.array([int(tup[1]) for tup in to_compare_lst])
     titles = ["MSE", "SSIM", "L1 Norm"]
+    temp = ''
     for i in range(err_mat.shape[1]):
-        plt.scatter(x_arr, err_mat.T[i])
-        plt.plot(x_arr, err_mat.T[i], c="navy")
+        norm = max(err_mat.T[i])
+        plt.scatter(x_arr, err_mat.T[i] / norm)
+        plt.plot(x_arr, err_mat.T[i], label=titles[i])
         plt.xticks(x_arr)
         if param == ANCILLAS:
             plt.xlabel("# of ancillas")
@@ -79,8 +81,12 @@ def plot_err(orig_img_path, path, param, err_func="ALL"):
             temp = "Transparencies"
         plt.ylabel("error")
         plt.title(titles[i] + " vs. # of " + temp)
-        plt.savefig(titles[i])
-        plt.show()
+    plt.legend(handles=titles)
+    # plt.yscale('log')
+    # plt.legend(loc='upper left')
+    # plt.title("Error vs. " + temp)
+    # plt.savefig("Error vs. " + temp + ".jpeg")
+    plt.show()
 
 
 def __get_name(file_path, changing):
@@ -97,3 +103,7 @@ def __get_name(file_path, changing):
         return name.split(',')[2].split()[0]  # removes .csv
 
 
+# TODO: create general runner for different types of images
+
+if __name__ == '__main__':
+    pass
