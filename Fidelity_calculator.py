@@ -190,15 +190,15 @@ def L1_norm(img1, img2):
     flattened2 = np.ravel(img2)
     return LA.norm((flattened1 - flattened2), ord=1)
 
-
-if __name__ == '__main__':
-    img = read_image("32X32 cells, 17 ancillas, 9 transparencies, 3 R.png")
-    filt = filter_image(img)
-    threshed = threshold_image(filt, 185)[1]
-    plt.imshow(threshed, cmap='gray')
-    plt.show()
-    cont_lst = find_contours(threshed)
-    marked = mark_contours(cont_lst, img, 2, True)
-    for im in marked:
-        plt.imshow(im, cmap='gray')
-        plt.show()
+#
+# if __name__ == '__main__':
+#     img = read_image("32X32 cells, 17 ancillas, 9 transparencies, 3 R.png")
+#     filt = filter_image(img)
+#     threshed = threshold_image(filt, 200)[1]
+#     plt.imshow(threshed, cmap='gray')
+#     plt.show()
+#     cont_lst = find_contours(threshed)
+#     marked = mark_contours(cont_lst, img, 2, True)
+#     # for im in marked:
+#     #     plt.imshow(im, cmap='gray')
+#     #     plt.show()
