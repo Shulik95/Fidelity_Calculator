@@ -3,6 +3,7 @@ import Fidelity_calculator as fc
 import os
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import image as im
 from skimage.color import rgba2rgb, rgb2gray
 
 # ----------- macros ----------- #
@@ -157,28 +158,23 @@ def __find_min_err(img_path, orig_img_path, symmetry):
     :param img_path: path of the image to extract sub-images from, assumes image is png/jpeg/jpg
     :param orig_img_path: path of the original image to compare against.
     """
-    # handle directory
-    if not os.path.isdir(DEFAULT_SUB_IMG_PATH):  # no directory, create new one
-        os.mkdir(DEFAULT_SUB_IMG_PATH)
-    else:  # directory exists, clear it.
-        for filename in os.listdir(DEFAULT_SUB_IMG_PATH):
-            os.remove(os.path.join(DEFAULT_SUB_IMG_PATH, filename))
 
     # find min error sub-image
     max_score, max_img = float('-inf'), None
     img = fc.read_image(img_path)
     orig_img = fc.read_image(orig_img_path)
-    cont_arr = fc.find_contours(fc.threshold_image(fc.filter_image(img)))
+    cont_arr = fc.find_contours(fc.threshold_image(fc.filter_image(img), 200)[1])
     sub_shape_arr = fc.mark_contours(cont_arr, img, symmetry)
     for sub_img in sub_shape_arr:
-        ssim_score = fc.compare_img(orig_img, img)[1]
+        ssim_score = fc.compare_img(orig_img, sub_img)[1]
         if ssim_score > max_score:
             max_img, max_score = sub_img, ssim_score
+    if max_img is None:
+        return
 
     # save found image in designated folder
-    temp_path = DEFAULT_SUB_IMG_PATH + "/" + img_path.split("/")[1]
-    plt.plot(max_img)
-    plt.savefig(temp_path)
+    temp_path = DEFAULT_SUB_IMG_PATH + "/" + img_path.split("/")[2]
+    im.imsave(temp_path, max_img)
 
 
 def __create_sub_img_folder(target_dir, orig_img_path, symmetry):
@@ -187,13 +183,17 @@ def __create_sub_img_folder(target_dir, orig_img_path, symmetry):
     for error comparison.
     :return:
     """
+    # handle directory
+    if not os.path.isdir(DEFAULT_SUB_IMG_PATH):  # no directory, create new one
+        os.mkdir(DEFAULT_SUB_IMG_PATH)
+    else:  # directory exists, clear it.
+        for filename in os.listdir(DEFAULT_SUB_IMG_PATH):
+            os.remove(os.path.join(DEFAULT_SUB_IMG_PATH, filename))
+
     for file in os.listdir(target_dir):
-        __find_min_err(os.path.dirname(file) + "/" + file, orig_img_path, symmetry)
+        temp_path = os.path.abspath(os.path.join(file, os.pardir)) + "/" + target_dir + "/" + file
+        __find_min_err(temp_path, orig_img_path, symmetry)
 
 
 if __name__ == '__main__':
-    os.mkdir("test_dir")
-    x = np.arange(10)
-    y = np.arange(10)
-    plt.plot(x, y)
-    plt.savefig("test_dir/test_fig1.png")
+    __create_sub_img_folder("target_dir", "SCatW.bmp", 1)
