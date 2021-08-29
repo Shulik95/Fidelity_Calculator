@@ -113,10 +113,10 @@ def mark_contours(contour_arr, img, symmetry, _plot=False):
                 flag = 1
         if _plot and flag:
             ax.plot([min_x - marg, max_x + marg, max_x + marg, min_x - marg, min_x - marg],
-                    [min_y - marg, min_y - marg, max_y + marg, max_y + marg, min_y - marg], c='r', linewidth=0.5)
+                    [min_y - marg, min_y - marg, max_y + marg, max_y + marg, min_y - marg], c='r', linewidth=0.4)
             flag = 0
     if _plot:
-        plt.savefig("found_subshapes2")
+        plt.savefig("found_subshapes2.jpg")
         # plt.show()
     return sub_images
 
@@ -213,17 +213,14 @@ def L1_norm(img1, img2):
 
 
 if __name__ == '__main__':
-    pass
-    # img = read_image("32X32 cells, 19 ancillas, 9 transparencies, 5 R.png")
-    # filt = filter_image(img)
-    # threshed = threshold_image(filt, 177)[1]
-    # plt.imshow(threshed, cmap='gray')
-    # plt.show()
-    # cont_lst = find_contours(threshed)
-    # marked = mark_contours(cont_lst, img, 2, True)
-    # for im in marked:
-    #     plt.imshow(im, cmap='gray')
-    #     plt.show()
+    img = read_image("32X32 cells, 21 ancillas, 9 transparencies, 5 R.png")
+    filt = cv2.fastNlMeansDenoising(np.uint8(filter_image(img)), None, 10, 10)
+    threshed = threshold_image(filt, 200)[1]
+    plt.imshow(threshed, cmap='gray')
+    plt.show()
+    cont_lst = find_contours(threshed)
+    marked = mark_contours(cont_lst, img, 2, True)
+    for im in marked:
+        plt.imshow(im, cmap='gray')
+        plt.show()
     # ai_detector("32X32 cells, 21 ancillas, 9 transparencies, 5 R.png")
-
-
