@@ -147,7 +147,7 @@ def runner():
         plot_err("OGimage.png", DEFAULT_CSV_PATH, var, 1)
     else:
         # TODO: complete section after helper functions are done
-        # --- #
+        __create_sub_img_folder()
         plot_err("OGimage.png", DEFAULT_SUB_IMG_PATH, var, 0)
 
 
@@ -163,7 +163,7 @@ def __find_min_err(img_path, orig_img_path, symmetry):
     max_score, max_img = float('-inf'), None
     img = fc.read_image(img_path)
     orig_img = fc.read_image(orig_img_path)
-    cont_arr = fc.find_contours(fc.threshold_image(fc.filter_image(img), 200)[1])
+    cont_arr = fc.find_contours(fc.threshold_image(fc.filter_image(img), 180)[1])
     sub_shape_arr = fc.mark_contours(cont_arr, img, symmetry)
     for sub_img in sub_shape_arr:
         ssim_score = fc.compare_img(orig_img, sub_img)[1]
@@ -195,5 +195,5 @@ def __create_sub_img_folder(target_dir, orig_img_path, symmetry):
         __find_min_err(temp_path, orig_img_path, symmetry)
 
 
-if __name__ == '__main__':
-    __create_sub_img_folder("target_dir", "SCatW.bmp", 1)
+# if __name__ == '__main__':
+#     __create_sub_img_folder("target_dir", "SCatW.bmp", 1)

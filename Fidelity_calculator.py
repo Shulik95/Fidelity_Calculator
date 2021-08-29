@@ -6,6 +6,8 @@ from imageio import imread, imwrite
 from skimage.metrics import structural_similarity as ssim
 from skimage.color import rgb2gray
 import cv2
+from imageai.Detection import ObjectDetection
+import os
 
 # ---------- macros ---------- #
 TWO_DIM = 2
@@ -14,7 +16,7 @@ MAX_GRAY_SCALE = 255
 GRAY_SCALE = 1
 THRESHOLD = 210
 NO_PARENT = -1
-MIN_IMG_SIZE = 10*10
+MIN_IMG_SIZE = 15 * 15
 HORIZONTAL = 1
 VERTICAL = 2
 
@@ -190,15 +192,38 @@ def L1_norm(img1, img2):
     flattened2 = np.ravel(img2)
     return LA.norm((flattened1 - flattened2), ord=1)
 
+
+# def ai_detector(input_img):
+#     """
+#     finding objects in image using resNet - not functional so far!!
+#     :param input_img: image to look in.
+#     :return:
+#     """
+#     exec_path = os.getcwd()
 #
-# if __name__ == '__main__':
-#     img = read_image("32X32 cells, 17 ancillas, 9 transparencies, 3 R.png")
-#     filt = filter_image(img)
-#     threshed = threshold_image(filt, 200)[1]
-#     plt.imshow(threshed, cmap='gray')
-#     plt.show()
-#     cont_lst = find_contours(threshed)
-#     marked = mark_contours(cont_lst, img, 2, True)
-#     # for im in marked:
-#     #     plt.imshow(im, cmap='gray')
-#     #     plt.show()
+#     detector = ObjectDetection()
+#     detector.setModelTypeAsRetinaNet()
+#     detector.setModelPath(os.path.join(exec_path, "resnet50_coco_best_v2.1.0.h5"))
+#     detector.loadModel()
+#
+#     detected = detector.detectObjectsFromImage(input_image=os.path.join(exec_path, input_img),
+#                                                output_image_path=os.path.join(exec_path, "imagenew.jpg"))
+#     for eachObj in detected:
+#         print(eachObj["name"], ":", eachObj["percentage_probability"])
+
+
+if __name__ == '__main__':
+    pass
+    # img = read_image("32X32 cells, 19 ancillas, 9 transparencies, 5 R.png")
+    # filt = filter_image(img)
+    # threshed = threshold_image(filt, 177)[1]
+    # plt.imshow(threshed, cmap='gray')
+    # plt.show()
+    # cont_lst = find_contours(threshed)
+    # marked = mark_contours(cont_lst, img, 2, True)
+    # for im in marked:
+    #     plt.imshow(im, cmap='gray')
+    #     plt.show()
+    # ai_detector("32X32 cells, 21 ancillas, 9 transparencies, 5 R.png")
+
+
