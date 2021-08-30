@@ -12,7 +12,7 @@ TRANS = 2
 RID = 3
 DEFAULT_SUB_IMG_PATH = "Found sub-images"
 DEFAULT_CSV_PATH = "csv data"
-DEFAULT_ORIG_PATH = "png data"
+DEFAULT_ORIG_PATH = "target_dir"
 
 
 # ------------ code ------------ #
@@ -142,13 +142,12 @@ def runner():
     """
     is_csv = input("Are the sub-images given as .csv?(y/n):")
     var = int(input("What is the changing parameter?(1-ancillas, 2-transparencies, 3-radius"))
-    symmetry = input("Is the symmetry horizontal or vertical? (1-horizontal, 2-vertical): ")
+    symmetry = int(input("Is the symmetry horizontal or vertical? (1-horizontal, 2-vertical): "))
     if is_csv == "y":  # sub images exist in is_csv folder
         plot_err("OGimage.png", DEFAULT_CSV_PATH, var, 1)
     else:
         # TODO: complete section after helper functions are done
-        __create_sub_img_folder()
-        plot_err("OGimage.png", DEFAULT_SUB_IMG_PATH, var, 0)
+        __create_sub_img_folder(DEFAULT_ORIG_PATH, "ORGimg.png", symmetry, var)
 
 
 def __find_min_err(img_path, orig_img_path, symmetry):
@@ -157,43 +156,52 @@ def __find_min_err(img_path, orig_img_path, symmetry):
     directory for further use.
     :param img_path: path of the image to extract sub-images from, assumes image is png/jpeg/jpg
     :param orig_img_path: path of the original image to compare against.
+    :return: avg SSIM score for given image.
     """
 
-    # find min error sub-image
-    max_score, max_img = float('-inf'), None
+    # get array of found sub images
     img = fc.read_image(img_path)
     orig_img = fc.read_image(orig_img_path)
     cont_arr = fc.find_contours(fc.threshold_image(fc.filter_image(img), 180)[1])
     sub_shape_arr = fc.mark_contours(cont_arr, img, symmetry)
-    for sub_img in sub_shape_arr:
-        ssim_score = fc.compare_img(orig_img, sub_img)[1]
-        if ssim_score > max_score:
-            max_img, max_score = sub_img, ssim_score
-    if max_img is None:
-        return
+    if len(sub_shape_arr) == 0:  # no sub-images found, return -1
+        return -1
+
+    # calc avg error
+    SSIM_score = 0
+    for obj in sub_shape_arr:
+        SSIM_score += fc.compare_img(orig_img, obj)[1]
+
+    return SSIM_score / len(sub_shape_arr)
 
     # save found image in designated folder
-    temp_path = DEFAULT_SUB_IMG_PATH + "/" + img_path.split("/")[2]
-    im.imsave(temp_path, max_img)
+    # temp_path = DEFAULT_SUB_IMG_PATH + "/" + img_path.split("/")[2]
+    # im.imsave(temp_path, max_img)
 
 
-def __create_sub_img_folder(target_dir, orig_img_path, symmetry):
+def __create_sub_img_folder(target_dir, orig_img_path, symmetry, param):
     """
     iterates over all images in given target folder and creates sub-image folder
     for error comparison.
-    :return:
+    :param target_dir - path to the directory containing the original images.
+    :param orig_img_path - path to the original image
+    :param symmetry - integer, 1 for horizontal symmetry, 2 for vertical.
+    :return err_arr - array of avg error for each image.
     """
+    err_arr = []
     # handle directory
     if not os.path.isdir(DEFAULT_SUB_IMG_PATH):  # no directory, create new one
         os.mkdir(DEFAULT_SUB_IMG_PATH)
     else:  # directory exists, clear it.
         for filename in os.listdir(DEFAULT_SUB_IMG_PATH):
             os.remove(os.path.join(DEFAULT_SUB_IMG_PATH, filename))
-
-    for file in os.listdir(target_dir):
+    img_arr = sorted(os.listdir(target_dir), key=lambda x: int(x.split(",")[param].split()[0]))
+    for file in img_arr:
         temp_path = os.path.abspath(os.path.join(file, os.pardir)) + "/" + target_dir + "/" + file
-        __find_min_err(temp_path, orig_img_path, symmetry)
+        err_arr.append((__find_min_err(temp_path, orig_img_path, symmetry), str(file).split(",")[param].split()[0]))
+    return err_arr
 
 
-# if __name__ == '__main__':
-#     __create_sub_img_folder("target_dir", "SCatW.bmp", 1)
+if __name__ == '__main__':
+    tmp = __create_sub_img_folder("target_dir", "SCatW.bmp", 1, 1)
+    print(tmp)

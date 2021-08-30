@@ -212,15 +212,15 @@ def L1_norm(img1, img2):
 #         print(eachObj["name"], ":", eachObj["percentage_probability"])
 
 
-if __name__ == '__main__':
-    img = read_image("32X32 cells, 21 ancillas, 9 transparencies, 5 R.png")
-    filt = cv2.fastNlMeansDenoising(np.uint8(filter_image(img)), None, 10, 10)
-    threshed = threshold_image(filt, 200)[1]
-    plt.imshow(threshed, cmap='gray')
-    plt.show()
-    cont_lst = find_contours(threshed)
-    marked = mark_contours(cont_lst, img, 2, True)
-    for im in marked:
-        plt.imshow(im, cmap='gray')
-        plt.show()
+# if __name__ == '__main__':
+#     img = read_image("32X32 cells, 21 ancillas, 9 transparencies, 5 R.png")
+#     filt = cv2.fastNlMeansDenoising(np.uint8(filter_image(img)), None, 10, 10)
+#     threshed = threshold_image(filt, 200)[1]
+#     plt.imshow(threshed, cmap='gray')
+#     plt.show()
+#     cont_lst = find_contours(threshed)
+#     marked = mark_contours(cont_lst, img, 2, True)
+#     for im in marked:
+#         plt.imshow(im, cmap='gray')
+#         plt.show()
     # ai_detector("32X32 cells, 21 ancillas, 9 transparencies, 5 R.png")
