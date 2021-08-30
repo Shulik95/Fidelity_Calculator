@@ -86,8 +86,8 @@ def mark_contours(contour_arr, img, symmetry, _plot=False):
     :return: python list containing tuples of cropped image and its contour.
     """
     marg, flag = 7, 0
-    fig, ax = plt.subplots()
-    ax.imshow(img, cmap="gray")
+    # fig, ax = plt.subplots()
+    # ax.imshow(img, cmap="gray")
     sub_images = []  # init array for pictures
     for contour in contour_arr:
 

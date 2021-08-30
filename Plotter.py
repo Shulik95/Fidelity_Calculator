@@ -48,53 +48,53 @@ def __img_from_csv(path, parameter):
     return sorted(ret, key=lambda x: int(x[1]))
 
 
-def plot_err(orig_img_path, path, param, is_csv, err_func="ALL"):
-    """
-
-    :param is_csv: integer - 0 if comparison images are images, positive integer if csv
-    :param orig_img_path: string - path to original image
-    :param path: string - path to directory of images for comparison
-    :param err_func: string - indicating which error function to use, default is all.
-    :param param: int - indicating if the changing parameter is acillas or transparencies
-    :return:
-    """
-    to_compare_lst, err_mat = None, None
-    orig_img = fc.read_image(orig_img_path)
-    to_compare_lst = __img_from_csv(path, param) if is_csv else __get_img_arr(path, param)
-
-    # creates matrix where each column is a the error according to diff func
-    for tup in to_compare_lst:
-        curr_img = rgb2gray(tup[0].astype(np.float32))
-        curr_img = (curr_img / np.max(curr_img)) * 255  # normalize image
-        curr_err = fc.compare_img(orig_img, curr_img, err_func)  # get errors according to diff error functions
-        if err_mat is not None:
-            err_mat = np.vstack((err_mat, curr_err))
-        else:
-            err_mat = curr_err
-
-    # plot the error according to the changing parameter
-    x_arr = np.array([int(tup[1]) for tup in to_compare_lst])
-    titles = ["MSE", "SSIM", "L1 Norm"]
-    temp = ''
-    for i in range(err_mat.shape[1]):
-        norm = max(err_mat.T[i])
-        plt.scatter(x_arr, err_mat.T[i] / norm)
-        plt.plot(x_arr, err_mat.T[i], label=titles[i])
-        plt.xticks(x_arr)
-        if param == ANCILLAS:
-            plt.xlabel("# of ancillas")
-            temp = "Ancillas"
-        else:
-            plt.xlabel("# of transparencies")
-            temp = "Transparencies"
-        # plt.ylabel("error")
-        # plt.title(titles[i] + " vs. # of " + temp)
-    # plt.legend(handles=titles)
-    plt.yscale('log')
-    plt.legend(loc='upper left')
-    plt.title("Error vs. " + temp)
-    plt.savefig("Error vs. " + temp + ".jpeg")
-    plt.show()
+# def plot_err(orig_img_path, path, param, is_csv, err_func="ALL"):
+#     """
+#
+#     :param is_csv: integer - 0 if comparison images are images, positive integer if csv
+#     :param orig_img_path: string - path to original image
+#     :param path: string - path to directory of images for comparison
+#     :param err_func: string - indicating which error function to use, default is all.
+#     :param param: int - indicating if the changing parameter is acillas or transparencies
+#     :return:
+#     """
+#     to_compare_lst, err_mat = None, None
+#     orig_img = fc.read_image(orig_img_path)
+#     to_compare_lst = __img_from_csv(path, param) if is_csv else __get_img_arr(path, param)
+#
+#     # creates matrix where each column is a the error according to diff func
+#     for tup in to_compare_lst:
+#         curr_img = rgb2gray(tup[0].astype(np.float32))
+#         curr_img = (curr_img / np.max(curr_img)) * 255  # normalize image
+#         curr_err = fc.compare_img(orig_img, curr_img, err_func)  # get errors according to diff error functions
+#         if err_mat is not None:
+#             err_mat = np.vstack((err_mat, curr_err))
+#         else:
+#             err_mat = curr_err
+#
+#     # plot the error according to the changing parameter
+#     x_arr = np.array([int(tup[1]) for tup in to_compare_lst])
+#     titles = ["MSE", "SSIM", "L1 Norm"]
+#     temp = ''
+#     for i in range(err_mat.shape[1]):
+#         norm = max(err_mat.T[i])
+#         plt.scatter(x_arr, err_mat.T[i] / norm)
+#         plt.plot(x_arr, err_mat.T[i], label=titles[i])
+#         plt.xticks(x_arr)
+#         if param == ANCILLAS:
+#             plt.xlabel("# of ancillas")
+#             temp = "Ancillas"
+#         else:
+#             plt.xlabel("# of transparencies")
+#             temp = "Transparencies"
+#         # plt.ylabel("error")
+#         # plt.title(titles[i] + " vs. # of " + temp)
+#     # plt.legend(handles=titles)
+#     plt.yscale('log')
+#     plt.legend(loc='upper left')
+#     plt.title("Error vs. " + temp)
+#     plt.savefig("Error vs. " + temp + ".jpeg")
+#     plt.show()
 
 
 def __get_name(file_path, changing):
@@ -140,14 +140,24 @@ def runner():
     the given images are in a directory called "png data".
     :return:
     """
+    param_arr = ["Ancillas", "Transparencies", "Rydberg"]
     is_csv = input("Are the sub-images given as .csv?(y/n):")
+    name = input("name of the original image (including the type):")
     var = int(input("What is the changing parameter?(1-ancillas, 2-transparencies, 3-radius"))
     symmetry = int(input("Is the symmetry horizontal or vertical? (1-horizontal, 2-vertical): "))
     if is_csv == "y":  # sub images exist in is_csv folder
-        plot_err("OGimage.png", DEFAULT_CSV_PATH, var, 1)
+        #plot_err("OGimage.png", DEFAULT_CSV_PATH, var, 1)
+        pass
     else:
         # TODO: complete section after helper functions are done
-        __create_sub_img_folder(DEFAULT_ORIG_PATH, "ORGimg.png", symmetry, var)
+        err_arr = __create_sub_img_folder(DEFAULT_ORIG_PATH, name, symmetry, var)
+        x = [tup[1] for tup in err_arr]
+        err = [tup[0] for tup in err_arr]
+        plt.scatter(x, err)
+        plt.title("SSIM Score vs. # of " + param_arr[var])
+        plt.ylabel("SSIM score")
+        plt.xlabel("# of " + param_arr[var])
+        plt.show()
 
 
 def __find_min_err(img_path, orig_img_path, symmetry):
@@ -190,11 +200,11 @@ def __create_sub_img_folder(target_dir, orig_img_path, symmetry, param):
     """
     err_arr = []
     # handle directory
-    if not os.path.isdir(DEFAULT_SUB_IMG_PATH):  # no directory, create new one
-        os.mkdir(DEFAULT_SUB_IMG_PATH)
-    else:  # directory exists, clear it.
-        for filename in os.listdir(DEFAULT_SUB_IMG_PATH):
-            os.remove(os.path.join(DEFAULT_SUB_IMG_PATH, filename))
+    # if not os.path.isdir(DEFAULT_SUB_IMG_PATH):  # no directory, create new one
+    #     os.mkdir(DEFAULT_SUB_IMG_PATH)
+    # else:  # directory exists, clear it.
+    #     for filename in os.listdir(DEFAULT_SUB_IMG_PATH):
+    #         os.remove(os.path.join(DEFAULT_SUB_IMG_PATH, filename))
     img_arr = sorted(os.listdir(target_dir), key=lambda x: int(x.split(",")[param].split()[0]))
     for file in img_arr:
         temp_path = os.path.abspath(os.path.join(file, os.pardir)) + "/" + target_dir + "/" + file
@@ -203,5 +213,4 @@ def __create_sub_img_folder(target_dir, orig_img_path, symmetry, param):
 
 
 if __name__ == '__main__':
-    tmp = __create_sub_img_folder("target_dir", "SCatW.bmp", 1, 1)
-    print(tmp)
+    runner()
