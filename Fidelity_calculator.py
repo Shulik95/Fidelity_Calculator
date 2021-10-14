@@ -6,8 +6,7 @@ from imageio import imread, imwrite
 from skimage.metrics import structural_similarity as ssim
 from skimage.color import rgb2gray
 import cv2
-from imageai.Detection import ObjectDetection
-import os
+
 
 # ---------- macros ---------- #
 TWO_DIM = 2

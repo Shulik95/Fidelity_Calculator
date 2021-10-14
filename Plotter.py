@@ -1,13 +1,11 @@
 # ---------- imports ----------- #
-import cv2
 
 import Fidelity_calculator as fc
 import os
 import numpy as np
+import matplotlib
 from matplotlib import pyplot as plt
-from PIL import Image
-from matplotlib import image as im
-from skimage.color import rgba2rgb, rgb2gray
+from skimage.color import rgb2gray
 
 # ----------- macros ----------- #
 ANCILLAS = 1
@@ -134,7 +132,6 @@ def __get_img_arr(path, parameter):
     return ret
 
 
-# TODO: create general runner for different types of images
 def runner():
     """
     main runner code fore entire program assumes that the original image is
@@ -154,13 +151,145 @@ def runner():
     else:
         # TODO: complete section after helper functions are done
         err_arr = __create_sub_img_folder(DEFAULT_ORIG_PATH, name, symmetry, var)
-        x = [tup[1] for tup in err_arr]
-        err = [tup[0] for tup in err_arr]
-        plt.scatter(x, err)
-        plt.title("SSIM Score vs. # of " + param_arr[var])
-        plt.ylabel("SSIM score")
-        plt.xlabel("# of " + param_arr[var])
+        x = np.array([str(tup[1]) for tup in err_arr])
+        num_of_sub_images = ['1', '2', '3']
+        error = None
+        for item in err_arr:
+            col = []
+            temp = 0
+            for k in [0, 1, 2]:
+                temp += item[0][k] if len(item[0]) >= k + 1 else -1
+                col.append(temp / (k + 1))
+            if error is None:
+                error = np.array(col)
+            else:
+                error = np.column_stack((error, np.array(col)))
+        fig, ax = plt.subplots()
+        im, cbar = __heatmap(error, num_of_sub_images, x, ax=ax, cmap="PuOr", cbarlabel="SSIM Error")
+        texts = annotate_heatmap(im, valfmt="{x:.2f}")
+
+        fig.tight_layout() , plt.title(), plt.ylabel("# of sub-images"), plt.ylabel("# of ancillas")
+        plt.savefig("SSIM_err_heatmap")
+        ax.set_title("SSIM Error vs # of ancillas & # of sub-images")
         plt.show()
+
+
+def __heatmap(data, row_labels, col_labels, ax=None,
+              cbar_kw={}, cbarlabel="", **kwargs):
+    """
+    Create a heatmap from a numpy array and two lists of labels.
+    Parameters
+    ----------
+    data
+        A 2D numpy array of shape (N, M).
+    row_labels
+        A list or array of length N with the labels for the rows.
+    col_labels
+        A list or array of length M with the labels for the columns.
+    ax
+        A `matplotlib.axes.Axes` instance to which the heatmap is plotted.  If
+        not provided, use current axes or create a new one.  Optional.
+    cbar_kw
+        A dictionary with arguments to `matplotlib.Figure.colorbar`.  Optional.
+    cbarlabel
+        The label for the colorbar.  Optional.
+    **kwargs
+        All other arguments are forwarded to `imshow`.
+    """
+
+    if not ax:
+        ax = plt.gca()
+
+    # Plot the heatmap
+    im = ax.imshow(data, **kwargs)
+
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
+    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
+
+    # We want to show all ticks...
+    ax.set_xticks(np.arange(data.shape[1]))
+    ax.set_yticks(np.arange(data.shape[0]))
+    # ... and label them with the respective list entries.
+    ax.set_xticklabels(col_labels)
+    ax.set_yticklabels(row_labels)
+
+    # Let the horizontal axes labeling appear on top.
+    ax.tick_params(top=True, bottom=False,
+                   labeltop=True, labelbottom=False)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=-30, ha="right",
+             rotation_mode="anchor")
+
+    # Turn spines off and create white grid.
+    # ax.spines[:].set_visible(False)
+
+    ax.set_xticks(np.arange(data.shape[1] + 1) - .5, minor=True)
+    ax.set_yticks(np.arange(data.shape[0] + 1) - .5, minor=True)
+    ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    return im, cbar
+
+
+def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
+                     textcolors=("black", "white"),
+                     threshold=None, **textkw):
+    """
+    A function to annotate a heatmap.
+
+    Parameters
+    ----------
+    im
+        The AxesImage to be labeled.
+    data
+        Data used to annotate.  If None, the image's data is used.  Optional.
+    valfmt
+        The format of the annotations inside the heatmap.  This should either
+        use the string format method, e.g. "$ {x:.2f}", or be a
+        `matplotlib.ticker.Formatter`.  Optional.
+    textcolors
+        A pair of colors.  The first is used for values below a threshold,
+        the second for those above.  Optional.
+    threshold
+        Value in data units according to which the colors from textcolors are
+        applied.  If None (the default) uses the middle of the colormap as
+        separation.  Optional.
+    **kwargs
+        All other arguments are forwarded to each call to `text` used to create
+        the text labels.
+    """
+
+    if not isinstance(data, (list, np.ndarray)):
+        data = im.get_array()
+
+    # Normalize the threshold to the images color range.
+    if threshold is not None:
+        threshold = im.norm(threshold)
+    else:
+        threshold = im.norm(data.max()) / 2.
+
+    # Set default alignment to center, but allow it to be
+    # overwritten by textkw.
+    kw = dict(horizontalalignment="center",
+              verticalalignment="center")
+    kw.update(textkw)
+
+    # Get the formatter in case a string is supplied
+    if isinstance(valfmt, str):
+        valfmt = matplotlib.ticker.StrMethodFormatter(valfmt)
+
+    # Loop over the data and create a `Text` for each "pixel".
+    # Change the text's color depending on the data.
+    texts = []
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
+            text = im.axes.text(j, i, valfmt(data[i, j], None), **kw)
+            texts.append(text)
+
+    return texts
 
 
 def __find_min_err(img_path, orig_img_path, symmetry):
@@ -178,17 +307,23 @@ def __find_min_err(img_path, orig_img_path, symmetry):
     cont_arr = fc.find_contours(fc.threshold_image(fc.filter_image(img), 180)[1])
     sub_shape_arr = fc.mark_contours(cont_arr, img, symmetry)
     if len(sub_shape_arr) == 0:  # no sub-images found, return -1
-        return -1
+        return [-1]
 
     # calc avg error
     SSIM_score, idx = 0, 0
-    for obj in sub_shape_arr:
-        SSIM_score += fc.compare_img(orig_img, obj)[1]
-        name = "Sub-Shape" + str(idx) + ".png"
-        path = DEFAULT_SUB_IMG_PATH + str(idx) + "/" + name
-        cv2.imwrite(path, obj)
-        idx += 1
-    return SSIM_score / len(sub_shape_arr)
+    # for obj in sub_shape_arr:
+    # SSIM_score += fc.compare_img(orig_img, obj)[1]
+    # name = "Sub-Shape" + str(idx) + ".png"
+    # path = DEFAULT_SUB_IMG_PATH + str(idx) + "/" + name
+    # # cv2.imwrite(path, obj) #TODO: fix subimage folders
+    # idx += 1
+    # SSIM_score = fc.compare_img(orig_img, obj)[1]
+
+    SSIM_arr = []
+    for item in sub_shape_arr:
+        SSIM_arr.append(fc.compare_img(orig_img, item)[1])
+    SSIM_arr.sort(reverse=True)
+    return SSIM_arr  # return sorted sub array
 
 
 def __create_sub_img_folder(target_dir, orig_img_path, symmetry, param):
@@ -198,7 +333,7 @@ def __create_sub_img_folder(target_dir, orig_img_path, symmetry, param):
     :param target_dir - path to the directory containing the original images.
     :param orig_img_path - path to the original image
     :param symmetry - integer, 1 for horizontal symmetry, 2 for vertical.
-    :return err_arr - array of avg error for each image.
+    :return err_arr - array of arrays containing errors for sub images for each image
     """
     err_arr = []
     img_arr = sorted(os.listdir(target_dir), key=lambda x: int(x.split(",")[param].split()[0]))
