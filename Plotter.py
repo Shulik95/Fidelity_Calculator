@@ -149,29 +149,47 @@ def runner():
         plot_err("OGimage.png", DEFAULT_CSV_PATH, var, 1)
 
     else:
-        # TODO: complete section after helper functions are done
         err_arr = __create_sub_img_folder(DEFAULT_ORIG_PATH, name, symmetry, var)
         x = np.array([str(tup[1]) for tup in err_arr])
         num_of_sub_images = ['1', '2', '3']
-        error = None
-        for item in err_arr:
-            col = []
-            temp = 0
-            for k in [0, 1, 2]:
-                temp += item[0][k] if len(item[0]) >= k + 1 else -1
-                col.append(temp / (k + 1))
-            if error is None:
-                error = np.array(col)
-            else:
-                error = np.column_stack((error, np.array(col)))
+        error_mat = create_err_mat(err_arr)
         fig, ax = plt.subplots()
-        im, cbar = __heatmap(error, num_of_sub_images, x, ax=ax, cmap="PuOr", cbarlabel="SSIM Error")
-        texts = annotate_heatmap(im, valfmt="{x:.2f}")
 
-        fig.tight_layout() , plt.title(), plt.ylabel("# of sub-images"), plt.ylabel("# of ancillas")
-        plt.savefig("SSIM_err_heatmap")
-        ax.set_title("SSIM Error vs # of ancillas & # of sub-images")
+        # TODO: code below creates heatmap, uncomment to use.
+        # im, cbar = __heatmap(error_mat, num_of_sub_images, x, ax=ax, cmap="PuOr", cbarlabel="SSIM Error")
+        # texts = annotate_heatmap(im, valfmt="{x:.2f}")
+
+        #TODO: code below creates scatter plots, default:
+        for row in error_mat:
+            ax.scatter(x,row)
+            ax.plot(x, row)
+        ax.legend(num_of_sub_images, title='# of sub-img', fancybox=True)
+
+        #fig.tight_layout()
+        plt.ylabel("SSIM"), plt.xlabel("Transparencies")
+        plt.savefig("SSIM_TransPhysical_scatter")
+        #ax.set_title("SSIM Error vs # of ancillas & # of sub-images")
         plt.show()
+
+
+def create_err_mat(err_arr):
+    """
+    creates error matrix where each row is number of subimages and columns are
+    the changing parameter.
+    :param err_arr: array of images.
+    """
+    error = None
+    for item in err_arr:
+        col = []
+        temp = 0
+        for k in [0, 1, 2]:
+            temp += item[0][k] if len(item[0]) >= k + 1 else -1
+            col.append(temp / (k + 1))
+        if error is None:
+            error = np.array(col)
+        else:
+            error = np.column_stack((error, np.array(col)))
+    return error
 
 
 def __heatmap(data, row_labels, col_labels, ax=None,
@@ -336,7 +354,7 @@ def __create_sub_img_folder(target_dir, orig_img_path, symmetry, param):
     :return err_arr - array of arrays containing errors for sub images for each image
     """
     err_arr = []
-    img_arr = sorted(os.listdir(target_dir), key=lambda x: int(x.split(",")[param].split()[0]))
+    img_arr = sorted(os.listdir(target_dir), key=lambda x: float(x.split(",")[param].split()[0]))
     # handle directory
 
     # TODO: create a directory for sub-images of each of the images.
